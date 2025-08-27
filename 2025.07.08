@@ -1,3 +1,0 @@
-"DefaultConnection": "Server=192.168.1.240\\SQLEXPRESS;Initial Catalog=SV_Reservation;User ID=sa;Password=itonimta;TrustServerCertificate=True;Integrated Security=False;"
-"DefaultConnection": "Data Source=.;Initial Catalog=IOT_Resevation;User Id=OIT_Resevation;Password=OITR;TrustServerCertificate=True; Integrated Security=False;"
-"DefaultConnection": "Server=194.233.76.58,1433\\SQLEXPRESS;Initial Catalog=SV_Reservation;User ID=sa;Password=it@onimta1+;TrustServerCertificate=True;Integrated Security=False;"

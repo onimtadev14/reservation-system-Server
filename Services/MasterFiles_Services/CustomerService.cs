@@ -38,51 +38,43 @@ namespace OIT_Reservation.Services
 
         public string CustomerSave(Customer customer)
         {
-            try
+            if (customer == null)
+                throw new ArgumentNullException(nameof(customer));
+
+            using (SqlConnection con = new SqlConnection(_conn))
+            using (SqlCommand cmd = new SqlCommand("sp_Save_Customer", con))
             {
-                using var conn = new SqlConnection(_conn);
-                using var cmd = new SqlCommand("sp_Save_Customer", conn)
-                {
-                    CommandType = CommandType.StoredProcedure
-                };
+                cmd.CommandType = CommandType.StoredProcedure;
 
-                cmd.Parameters.AddWithValue("@CustomerTypeCode", customer.CustomerTypeCode ?? (object)DBNull.Value);
-                cmd.Parameters.AddWithValue("@CustomerCode", customer.CustomerCode ?? string.Empty); // For update
-                cmd.Parameters.AddWithValue("@Title", customer.Title ?? (object)DBNull.Value);
-                cmd.Parameters.AddWithValue("@Name", customer.Name ?? (object)DBNull.Value);
-                cmd.Parameters.AddWithValue("@NIC_PassportNo", customer.NIC_PassportNo ?? (object)DBNull.Value);
-                cmd.Parameters.AddWithValue("@NationalityCode", customer.NationalityCode ?? (object)DBNull.Value);
-                cmd.Parameters.AddWithValue("@CountryCode", customer.CountryCode ?? (object)DBNull.Value);
-                cmd.Parameters.AddWithValue("@Mobile", customer.Mobile ?? (object)DBNull.Value);
-                cmd.Parameters.AddWithValue("@Telephone", customer.Telephone ?? (object)DBNull.Value);
-                cmd.Parameters.AddWithValue("@email", customer.Email ?? (object)DBNull.Value);
-                cmd.Parameters.AddWithValue("@TravelAgentCode", customer.TravelAgentCode ?? (object)DBNull.Value);
-                cmd.Parameters.AddWithValue("@CreditLimit", customer.CreditLimit);
+                cmd.Parameters.AddWithValue("@CustomerTypeCode", (object)customer.CustomerTypeCode ?? DBNull.Value);
+                cmd.Parameters.AddWithValue("@CustomerCode", (object)customer.CustomerCode ?? DBNull.Value);
+                cmd.Parameters.AddWithValue("@Title", (object)customer.Title ?? DBNull.Value);
+                cmd.Parameters.AddWithValue("@Name", (object)customer.Name ?? DBNull.Value);
+                cmd.Parameters.AddWithValue("@NIC_PassportNo", (object)customer.NIC_PassportNo ?? DBNull.Value);
+                cmd.Parameters.AddWithValue("@NationalityCode", (object)customer.NationalityCode ?? DBNull.Value);
+                cmd.Parameters.AddWithValue("@CountryCode", (object)customer.CountryCode ?? DBNull.Value);
+                cmd.Parameters.AddWithValue("@Mobile", (object)customer.Mobile ?? DBNull.Value);
+                cmd.Parameters.AddWithValue("@Telephone", (object)customer.Telephone ?? DBNull.Value);
+                cmd.Parameters.AddWithValue("@email", (object)customer.Email ?? DBNull.Value);
+                cmd.Parameters.AddWithValue("@TravelAgentCode", (object)customer.TravelAgentCode ?? DBNull.Value);
+                cmd.Parameters.AddWithValue("@CreditLimit", customer.CreditLimit != null ? customer.CreditLimit : 0);
                 cmd.Parameters.AddWithValue("@IsActive", customer.IsActive);
-                cmd.Parameters.AddWithValue("@IsNew", string.IsNullOrWhiteSpace(customer.CustomerCode)); // true if new
-                cmd.Parameters.AddWithValue("@Address", customer.Address ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@IsNew", string.IsNullOrWhiteSpace(customer.CustomerCode) ? 1 : 0);
+                cmd.Parameters.AddWithValue("@Address", (object)customer.Address ?? DBNull.Value);
 
-                // OUTPUT parameter
-                var outputParam = new SqlParameter("@CustomerCodeRet", SqlDbType.VarChar, 20)
+                SqlParameter outParam = new SqlParameter("@CustomerCodeRet", SqlDbType.VarChar, 20)
                 {
                     Direction = ParameterDirection.Output
                 };
-                cmd.Parameters.Add(outputParam);
+                cmd.Parameters.Add(outParam);
 
-                conn.Open();
+                con.Open();
                 cmd.ExecuteNonQuery();
 
-                return outputParam.Value.ToString();
-            }
-            catch (SqlException ex)
-            {
-                throw new ApplicationException($"SQL Error: {ex.Message}");
-            }
-            catch (Exception ex)
-            {
-                throw new ApplicationException($"Error saving customer: {ex.Message}");
+                return outParam.Value?.ToString() ?? string.Empty;
             }
         }
+
 
         public List<Customer> GetAllCustomers()
         {
@@ -198,7 +190,6 @@ namespace OIT_Reservation.Services
                 cmd.CommandType = CommandType.StoredProcedure;
 
                 cmd.Parameters.AddWithValue("@CustomerTypeCode", customer.CustomerTypeCode ?? "");
-                cmd.Parameters.AddWithValue("@CustomerCode", customerCode);
                 cmd.Parameters.AddWithValue("@Title", customer.Title ?? "");
                 cmd.Parameters.AddWithValue("@Name", customer.Name ?? "");
                 cmd.Parameters.AddWithValue("@NIC_PassportNo", customer.NIC_PassportNo ?? "");

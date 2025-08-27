@@ -112,6 +112,7 @@ builder.Services.AddScoped<CountryService>(); // Register CountryService
 builder.Services.AddScoped<CustomerTypeService>(); // Register CustomerTypeService
 builder.Services.AddScoped<TitleService>(); // Register TitleService
 builder.Services.AddScoped<NationalityService>(); // Register NationalityService
+builder.Services.AddScoped<RoomService>(); // Register RoomService
 
 // Register CustomerService
 
