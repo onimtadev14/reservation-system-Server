@@ -26,7 +26,7 @@ namespace OIT_Reservation.Services
                     // Input parameters
                     cmd.Parameters.AddWithValue("@RoomTypeCode", room.RoomTypeCode ?? (object)DBNull.Value);
                     cmd.Parameters.AddWithValue("@RoomCode", room.RoomCode ?? (object)DBNull.Value);
-                    cmd.Parameters.AddWithValue("@RoomName", room.RoomName ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@Description", room.Description ?? (object)DBNull.Value);
                     cmd.Parameters.AddWithValue("@RoomSize", room.RoomSize);
                     cmd.Parameters.AddWithValue("@RoomStatus", room.RoomStatus ?? (object)DBNull.Value);
                     cmd.Parameters.AddWithValue("@Remark", room.Remarks ?? (object)DBNull.Value);

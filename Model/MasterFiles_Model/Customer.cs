@@ -15,4 +15,6 @@ public class Customer
     public bool IsActive { get; set; }
     public bool IsNew { get; set; }  // true = insert, false = update
     public string Address { get; set; }
+    public string Whatsapp { get; set; }
+    public string Remark { get; set; }
 }

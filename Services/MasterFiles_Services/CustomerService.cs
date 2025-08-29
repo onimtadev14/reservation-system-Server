@@ -61,6 +61,8 @@ namespace OIT_Reservation.Services
                 cmd.Parameters.AddWithValue("@IsActive", customer.IsActive);
                 cmd.Parameters.AddWithValue("@IsNew", string.IsNullOrWhiteSpace(customer.CustomerCode) ? 1 : 0);
                 cmd.Parameters.AddWithValue("@Address", (object)customer.Address ?? DBNull.Value);
+                cmd.Parameters.AddWithValue("@Whatsapp", (object)customer.Whatsapp ?? DBNull.Value);
+                cmd.Parameters.AddWithValue("@Remark", (object)customer.Remark ?? DBNull.Value);
 
                 SqlParameter outParam = new SqlParameter("@CustomerCodeRet", SqlDbType.VarChar, 20)
                 {
@@ -104,7 +106,9 @@ namespace OIT_Reservation.Services
                     TravelAgentCode = reader["TravelAgentCode"].ToString(),
                     CreditLimit = reader["CreditLimit"] != DBNull.Value ? Convert.ToDecimal(reader["CreditLimit"]) : 0,
                     IsActive = reader["IsActive"] != DBNull.Value && Convert.ToBoolean(reader["IsActive"]),
-                    Address = reader["Address"].ToString()
+                    Address = reader["Address"].ToString(),
+                    Whatsapp = reader["Whatsapp"].ToString(),
+                    Remark = reader["Remark"].ToString(),
                 });
 #pragma warning restore CS8601 // Possible null reference assignment.
             }
@@ -166,6 +170,8 @@ namespace OIT_Reservation.Services
                 cmd.Parameters.AddWithValue("@CreditLimit", customer.CreditLimit);
                 cmd.Parameters.AddWithValue("@IsActive", customer.IsActive);
                 cmd.Parameters.AddWithValue("@Address", customer.Address ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@Whatsapp", customer.Whatsapp ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@Remark", customer.Remark ?? (object)DBNull.Value);
 
                 conn.Open();
                 cmd.ExecuteNonQuery();
@@ -203,6 +209,8 @@ namespace OIT_Reservation.Services
                 cmd.Parameters.AddWithValue("@IsActive", customer.IsActive);
                 cmd.Parameters.AddWithValue("@IsNew", 0); // Important: UPDATE
                 cmd.Parameters.AddWithValue("@Address", customer.Address ?? "");
+                cmd.Parameters.AddWithValue("@Whatsapp", customer.Whatsapp ?? "");
+                cmd.Parameters.AddWithValue("@Remark", customer.Remark ?? "");
 
                 var outParam = new SqlParameter("@CustomerCodeRet", SqlDbType.VarChar, 20)
                 {
