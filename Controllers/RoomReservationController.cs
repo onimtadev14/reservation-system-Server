@@ -57,7 +57,7 @@ public class RoomReservationController : ControllerBase
     {
         try
         {
-            var data = await _reservationService.GetAllReservationsAsync(top);
+            var data = await _reservationService.GetAllAsync(top);
             return Ok(data);
         }
         catch (Exception ex)
