@@ -4,7 +4,7 @@ using System.Data;
 public interface IRoomReservationService
 {
     Task<string> SaveOrUpdateReservationAsync(ReservationDto dto);
-    Task<List<ReservationDto>> GetAllReservationsAsync();
+    Task<IReadOnlyList<ReservationDto>> GetAllAsync(int? top = null);
 
 }
 
@@ -17,54 +17,190 @@ public class RoomReservationService : IRoomReservationService
     private readonly IConfiguration _config;
     public RoomReservationService(IConfiguration config) => _config = config;
 
-    public async Task<List<ReservationDto>> GetAllReservationsAsync()
+    public async Task<IReadOnlyList<ReservationDto>> GetAllAsync(int? top = null)
 {
-    var list = new List<ReservationDto>();
-
     using var conn = new SqlConnection(_config.GetConnectionString("DefaultConnection"));
-    using var cmd  = new SqlCommand("sp_reservation_get_all", conn) { CommandType = CommandType.StoredProcedure };
+
+    // Build TOP (@top) only when requested
+    var topSql = top.HasValue ? "TOP (@top) " : string.Empty;
+
+    var sql = $@"
+                SELECT {topSql}
+                    h.ReservationNo,
+                    h.ReservationDate,
+                    h.ReservationType,
+                    h.CustomerCode,
+                    h.Mobile,
+                    h.Telephone,
+                    h.email,
+                    h.TravelAgentCode,
+                    h.Checkindatetime,
+                    h.checkoutdatetime,
+                    h.noofVehicles,
+                    h.noofadults,
+                    h.noofKids,
+                    h.eventtype,
+                    h.setupstyle,
+                    h.SubTotal,
+                    h.DiscountPer,
+                    h.Discount,
+                    h.GrossAmount,
+                    h.PaidAmount,
+                    h.DueAmount,
+                    h.Remark,
+                    h.RefundAmount,
+                    h.refundnote,
+                    h.ReferenceReservationNo,
+                    h.BookingResourceId,
+                    h.BookingReference,
+                    h.ReservationStatus,
+                    h.crUser,
+
+                    -- Room details (LEFT JOIN; may be null)
+                    rd.ReservationRoomDetailsID,
+                    rd.RoomCode,
+                    rd.PackageCode,
+                    rd.noofdays,
+                    rd.Price    AS rdPrice,
+                    rd.Amount   AS rdAmount,
+                    rd.IsDelete,
+                    rd.ModifiedDate,
+                    rd.checkindate,
+                    rd.checkoutdate,
+
+                    -- Service details
+                    sd.ServiceCode       AS ServiceTypeCode,
+                    sd.ServiceDate,
+                    sd.ServiceQty        AS ServiceQuantity,
+                    sd.Amount            AS ServiceAmount,
+                    sd.TotalAmount       AS ServiceTotalAmount,
+                    sd.serviceremark,
+
+                    -- Payment details
+                    pd.PaymentID         AS PaymentId,
+                    pd.Amount            AS PayAmount,
+                    pd.RefNo,
+                    pd.RefDate,
+                    pd.receiptNo         AS ReceiptNo
+
+                FROM dbo.Reservation_Hed h
+                LEFT JOIN dbo.Reservation_RoomDetails_Det rd
+                    ON rd.ReservationNo = h.ReservationNo
+                AND ISNULL(rd.IsDelete,0) = 0
+                LEFT JOIN dbo.Reservation_Service_Det sd
+                    ON sd.ReservationNo = h.ReservationNo
+                AND ISNULL(sd.IsDelete,0) = 0
+                LEFT JOIN dbo.Reservation_Payment_Det pd
+                    ON pd.ReservationNo = h.ReservationNo
+                ORDER BY h.ReservationDate DESC, h.ReservationNo;";
+
+    using var cmd = new SqlCommand(sql, conn);
+    if (top.HasValue) cmd.Parameters.Add("@top", SqlDbType.Int).Value = top.Value;
+
+    var map = new Dictionary<string, ReservationDto>(StringComparer.OrdinalIgnoreCase);
 
     await conn.OpenAsync();
     using var rdr = await cmd.ExecuteReaderAsync();
 
     while (await rdr.ReadAsync())
     {
-        list.Add(new ReservationDto
+        // Hed (master)
+        var resNo = rdr["ReservationNo"] as string ?? "";
+
+        if (!map.TryGetValue(resNo, out var dto))
         {
-            ReservationNo     = rdr["ReservationNo"]?.ToString(),
-            ReservationDate   = rdr.GetDateTime(rdr.GetOrdinal("ReservationDate")),
-            ReservationType   = rdr.GetInt32(rdr.GetOrdinal("ReservationType")),
-            CustomerCode      = rdr["CustomerCode"]?.ToString(),
-            Mobile            = rdr["Mobile"]?.ToString(),
-            Telephone         = rdr["Telephone"]?.ToString(),
-            Email             = rdr["Email"]?.ToString(),
-            TravelAgentCode   = rdr["TravelAgentCode"]?.ToString(),
-            CheckinDateTime   = rdr.GetDateTime(rdr.GetOrdinal("Checkindatetime")),
-            CheckoutDateTime  = rdr.GetDateTime(rdr.GetOrdinal("Checkoutdatetime")),
-            NoOfVehicles      = rdr.GetInt32(rdr.GetOrdinal("NoOfVehicles")),
-            NoOfAdults        = rdr.GetInt32(rdr.GetOrdinal("NoOfAdults")),
-            NoOfKids          = rdr.GetInt32(rdr.GetOrdinal("NoOfKids")),
-            EventType         = rdr["EventType"]?.ToString(),
-            SetupStyle        = rdr["SetupStyle"]?.ToString(),
-            SubTotal          = rdr.GetDecimal(rdr.GetOrdinal("SubTotal")),
-            DiscountPer       = rdr.GetDecimal(rdr.GetOrdinal("DiscountPer")),
-            Discount          = rdr.GetDecimal(rdr.GetOrdinal("Discount")),
-            GrossAmount       = rdr.GetDecimal(rdr.GetOrdinal("GrossAmount")),
-            PaidAmount        = rdr.GetDecimal(rdr.GetOrdinal("PaidAmount")),
-            DueAmount         = rdr.GetDecimal(rdr.GetOrdinal("DueAmount")),
-            ReservationNote   = rdr["ReservationNote"]?.ToString(),
-            RefundAmount      = rdr.GetDecimal(rdr.GetOrdinal("RefundAmount")),
-            RefundNote        = rdr["RefundNote"]?.ToString(),
-            ReferenceNo       = rdr["ReferenceNo"]?.ToString(),
-            BookingResourceId = rdr.GetInt32(rdr.GetOrdinal("BookingResourceId")),
-            BookingReferenceNo= rdr["BookingReference"]?.ToString(),
-            ReservationStatus = rdr["ReservationStatus"]?.ToString(),
-            User              = rdr["User"]?.ToString()
-        });
+            dto = new ReservationDto
+            {
+                ReservationNo       = resNo,
+                ReservationDate     = rdr.GetDateTime(rdr.GetOrdinal("ReservationDate")),
+                ReservationType     = rdr.GetInt32(rdr.GetOrdinal("ReservationType")),
+                CustomerCode        = rdr["CustomerCode"] as string ?? "",
+                Mobile              = rdr["Mobile"] as string,
+                Telephone           = rdr["Telephone"] as string,
+                Email               = rdr["email"] as string,
+                TravelAgentCode     = rdr["TravelAgentCode"] as string,
+                CheckinDateTime     = rdr.GetDateTime(rdr.GetOrdinal("Checkindatetime")),
+                CheckoutDateTime    = rdr.GetDateTime(rdr.GetOrdinal("checkoutdatetime")),
+                NoOfVehicles        = rdr.GetInt32(rdr.GetOrdinal("noofVehicles")),
+                NoOfAdults          = rdr.GetInt32(rdr.GetOrdinal("noofadults")),
+                NoOfKids            = rdr.GetInt32(rdr.GetOrdinal("noofKids")),
+                EventType           = rdr["eventtype"] as string,
+                SetupStyle          = rdr["setupstyle"] as string,
+                SubTotal            = rdr.GetDecimal(rdr.GetOrdinal("SubTotal")),
+                DiscountPer         = rdr.GetDecimal(rdr.GetOrdinal("DiscountPer")),
+                Discount            = rdr.GetDecimal(rdr.GetOrdinal("Discount")),
+                GrossAmount         = rdr.GetDecimal(rdr.GetOrdinal("GrossAmount")),
+                PaidAmount          = rdr.GetDecimal(rdr.GetOrdinal("PaidAmount")),
+                DueAmount           = rdr.GetDecimal(rdr.GetOrdinal("DueAmount")),
+                ReservationNote     = rdr["Remark"] as string,
+                RefundAmount        = rdr.GetDecimal(rdr.GetOrdinal("RefundAmount")),
+                RefundNote          = rdr["refundnote"] as string,
+                ReferenceNo         = rdr["ReferenceReservationNo"] as string,
+                BookingResourceId   = rdr["BookingResourceId"] is DBNull ? 0 : rdr.GetInt32(rdr.GetOrdinal("BookingResourceId")),
+                BookingReferenceNo  = rdr["BookingReference"] as string,
+                ReservationStatus   = rdr["ReservationStatus"] as string,
+                User                = rdr["crUser"] as string,
+                RoomDetails         = new List<RoomDetailDto>(),
+                ServiceDetails      = new List<ServiceDetailDto>(),
+                RoomPayDetails      = new List<RoomPaymentDetailDto>()
+            };
+
+            map.Add(resNo, dto);
+        }
+
+        // RoomDetails (if present)
+        if (!(rdr["RoomCode"] is DBNull) && !(rdr["PackageCode"] is DBNull))
+        {
+            dto.RoomDetails!.Add(new RoomDetailDto
+            {
+                ReservationRoomDetailsID = rdr["ReservationRoomDetailsID"] is DBNull ? 0 : Convert.ToInt32(rdr["ReservationRoomDetailsID"]),
+                ReservationNo            = resNo,
+                RoomCode                 = rdr["RoomCode"] as string,
+                PackageCode              = rdr["PackageCode"] as string,
+                NoOfDays                 = rdr["noofdays"] is DBNull ? 0 : Convert.ToInt32(rdr["noofdays"]),
+                Price                    = rdr["rdPrice"]  is DBNull ? 0m : (decimal)rdr["rdPrice"],
+                Amount                   = rdr["rdAmount"] is DBNull ? 0m : (decimal)rdr["rdAmount"],
+                IsDelete                 = rdr["IsDelete"] is DBNull ? false : Convert.ToBoolean(rdr["IsDelete"]),
+                ModifiedDate             = rdr["ModifiedDate"] is DBNull ? DateTime.MinValue : (DateTime)rdr["ModifiedDate"],
+                CheckinDate              = rdr["checkindate"] is DBNull ? DateTime.MinValue : (DateTime)rdr["checkindate"],
+                CheckoutDate             = rdr["checkoutdate"] is DBNull ? DateTime.MinValue : (DateTime)rdr["checkoutdate"]
+            });
+        }
+
+        // ServiceDetails (if present)
+        if (!(rdr["ServiceTypeCode"] is DBNull))
+        {
+            dto.ServiceDetails!.Add(new ServiceDetailDto
+            {
+                ServiceTypeCode   = rdr["ServiceTypeCode"] as string,
+                ServiceDate       = rdr["ServiceDate"] is DBNull ? DateTime.MinValue : (DateTime)rdr["ServiceDate"],
+                ServiceQuantity   = rdr["ServiceQuantity"] is DBNull ? 0 : Convert.ToInt32(rdr["ServiceQuantity"]),
+                ServiceAmount     = rdr["ServiceAmount"]   is DBNull ? 0m : (decimal)rdr["ServiceAmount"],
+                ServiceTotalAmount= rdr["ServiceTotalAmount"] is DBNull ? 0m : (decimal)rdr["ServiceTotalAmount"],
+                ServiceRemark     = rdr["serviceremark"] as string
+            });
+        }
+
+        // PaymentDetails (if present)
+        if (!(rdr["PaymentId"] is DBNull) || !(rdr["ReceiptNo"] is DBNull))
+        {
+            dto.RoomPayDetails!.Add(new RoomPaymentDetailDto
+            {
+                PaymentId  = rdr["PaymentId"]  is DBNull ? 0  : Convert.ToInt32(rdr["PaymentId"]),
+                Amount     = rdr["PayAmount"]  is DBNull ? 0m : (decimal)rdr["PayAmount"],
+                RefNo      = rdr["RefNo"] as string,
+                RefDate    = rdr["RefDate"] is DBNull ? (DateTime?)null : (DateTime)rdr["RefDate"],
+                ReceiptNo  = rdr["ReceiptNo"] as string
+            });
+        }
     }
 
-    return list;
+    return map.Values
+              .OrderByDescending(r => r.ReservationDate)
+              .ThenBy(r => r.ReservationNo)
+              .ToList();
 }
+
 
 
     public async Task<string> SaveOrUpdateReservationAsync(ReservationDto dto)
