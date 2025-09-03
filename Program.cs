@@ -5,7 +5,8 @@ using OIT_Reservation.Services;
 using OIT_Reservation.Helpers;
 using Serilog;
 using Serilog.Exceptions;
-using Microsoft.AspNetCore.Authentication.JwtBearer; // For JwtHelper
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using YourNamespace.Services; // For JwtHelper
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -108,11 +109,12 @@ builder.Services.AddScoped<setupStyleService>();
 builder.Services.AddScoped<PackageInfoService>();
 builder.Services.AddScoped<ServiceTypeService>();
 builder.Services.AddScoped<CustomerService>();
-builder.Services.AddScoped<CountryService>(); // Register CountryService
-builder.Services.AddScoped<CustomerTypeService>(); // Register CustomerTypeService
-builder.Services.AddScoped<TitleService>(); // Register TitleService
-builder.Services.AddScoped<NationalityService>(); // Register NationalityService
-builder.Services.AddScoped<RoomService>(); // Register RoomService
+builder.Services.AddScoped<CountryService>();
+builder.Services.AddScoped<CustomerTypeService>();
+builder.Services.AddScoped<TitleService>();
+builder.Services.AddScoped<NationalityService>();
+builder.Services.AddScoped<RoomService>();
+builder.Services.AddScoped<BookingResourceService>();
 builder.Services.AddScoped<IRoomReservationService, RoomReservationService>();
 
 // Register CustomerService
