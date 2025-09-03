@@ -28,6 +28,8 @@ public class ReservationDto {
     public string? BookingReferenceNo { get; set; }
     public string? ReservationStatus { get; set; }
     public string? User { get; set; }
+    public string? CrUser { get; set; }
+    public string? EdUser { get; set; }
     public List<RoomDetailDto>? RoomDetails { get; set; }
     public List<ServiceDetailDto>? ServiceDetails { get; set; }
     public List<RoomPaymentDetailDto>? RoomPayDetails { get; set; }
@@ -42,7 +44,7 @@ public class RoomDetailDto {
     public decimal Price { get; set; }
     public decimal Amount { get; set; }
     public bool IsDelete { get; set; }
-    public DateTime ModifiedDate { get; set; }
+    public DateTime? ModifiedDate { get; set; }
     public DateTime CheckinDate { get; set; }
     public DateTime CheckoutDate { get; set; }
 }
@@ -61,5 +63,5 @@ public class RoomPaymentDetailDto {
     public decimal Amount { get; set; }
     public string? RefNo { get; set; }
     public DateTime? RefDate { get; set; }
-    public string? ReceiptNo { get; set; }  // leave "" when creating a new receipt per SP logic
+    public string? ReceiptNo { get; set; }
 }
