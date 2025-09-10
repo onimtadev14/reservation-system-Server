@@ -66,7 +66,8 @@ namespace OIT_Reservation.Services
                     BeverageAmount = Convert.ToDecimal(reader["BeverageAmount"]),
 
                     IsRoom = Convert.ToBoolean(reader["IsRoom"]),
-                    IsBanquet = Convert.ToBoolean(reader["IsBanquet"])
+                    IsBanquet = Convert.ToBoolean(reader["IsBanquet"]),
+                    IsVilla = Convert.ToBoolean(reader["IsVilla"])
                 });
             }
             return list;
@@ -104,6 +105,7 @@ namespace OIT_Reservation.Services
                 cmd.Parameters.AddWithValue("@BeverageAmount", packageInfo.BeverageAmount);
                 cmd.Parameters.AddWithValue("@IsRoom", packageInfo.IsRoom);
                 cmd.Parameters.AddWithValue("@IsBanquet", packageInfo.IsBanquet);
+                cmd.Parameters.AddWithValue("@IsVilla", packageInfo.IsVilla);
 
                 // Output parameter for return value
                 var packageCodeRetParam = new SqlParameter("@PackageCodeRet", SqlDbType.VarChar, 20)
@@ -164,6 +166,7 @@ namespace OIT_Reservation.Services
                 cmd.Parameters.AddWithValue("@BeverageAmount", packageInfo.BeverageAmount);
                 cmd.Parameters.AddWithValue("@IsRoom", packageInfo.IsRoom);
                 cmd.Parameters.AddWithValue("@IsBanquet", packageInfo.IsBanquet);
+                cmd.Parameters.AddWithValue("@IsVilla", packageInfo.IsVilla);
 
                 // Output returned code
                 var packageCodeRetParam = new SqlParameter("@PackageCodeRet", SqlDbType.VarChar, 20)

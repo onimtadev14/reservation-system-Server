@@ -14,6 +14,8 @@
 
     public bool IsRoom { get; set; }
     public bool IsBanquet { get; set; }
+    public bool IsVilla { get; set; }
 
-    public string Type => IsRoom ? "Room" : (IsBanquet ? "Banquet" : "Unknown");
+
+    public string Type => IsRoom ? "Room" : (IsBanquet ? "Banquet" : (IsVilla ? "Villa" : "Unknown"));
 }
