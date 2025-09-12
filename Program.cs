@@ -116,6 +116,7 @@ builder.Services.AddScoped<NationalityService>();
 builder.Services.AddScoped<RoomService>();
 builder.Services.AddScoped<BookingResourceService>();
 builder.Services.AddScoped<IRoomReservationService, RoomReservationService>();
+builder.Services.AddScoped<IReservationCalendarService, ReservationCalendarService>();
 
 // Register CustomerService
 
